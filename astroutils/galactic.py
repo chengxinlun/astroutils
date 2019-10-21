@@ -2,7 +2,69 @@ from .plot_crt import plotLine
 import numpy as np
 
 
-def plot_sarm(ax, xunit='L_Z'):
+# Spiral arm information dictionary
+# Format: {name: [R_ref, beta_ref, width, psi, beta_min, beta_max, color],}
+# 2014ApJ...783..130R
+sa_reid2014 = {'Scutum': [5.0, 27.6, 0.17, 19.8, 3.0, 101.0, '#00FFFFFF'],
+               'Sgr': [6.6, 25.6, 0.26, 6.9, -2.0, 68.0, '#FF00FFFF'],
+               'Local': [8.4, 8.9, 0.33, 12.8, -8.0, 27.0, '#0000FFFF'],
+               'Persus': [9.9, 14.2, 0.38, 9.4, -21.0, 88.0, '#000000FF'],
+               'Outer': [13.0, 18.6, 0.63, 13.8, -6.0, 56.0, '#FF0000FF']}
+
+
+def saHelper(r_ref, beta_ref, width, psi, beta_min, beta_max):
+    '''
+    Helper function for plotting spiral arm.
+
+    Assume astropy galactocentric corrdinate convension.
+
+    Parameters
+    ----------
+    All parameters are parameters of spiral arm
+
+    Returns
+    -------
+    x, y: the center of the spiral arm
+    x_i, y_i: the inner limit of the spiral arm
+    x_o. y_o: the outer limit of the spiral arm
+    '''
+    beta = np.linspace(beta_min, beta_max, 500)
+    psi_rad = psi * np.pi / 180.0
+    r_sp = r_ref * np.exp(-(beta - beta_ref) * np.tan(psi_rad) * np.pi / 180.0)
+    theta = (180.0 - beta) * np.pi / 180.0
+    x = r_sp * np.cos(theta)
+    y = r_sp * np.sin(theta)
+    x_i = (r_sp - width) * np.cos(theta)
+    y_i = (r_sp - width) * np.sin(theta)
+    x_o = (r_sp + width) * np.cos(theta)
+    y_o = (r_sp + width) * np.sin(theta)
+    return x, y, x_i, y_i, x_o, y_o
+    
+
+def plotSArmXY(ax, sa_dict):
+    '''
+    Plot spiral arm for X-Y plot.
+
+    Assume astropy.coordinates.galactocentric convension
+
+    Parameters
+    ----------
+    ax: matplotlib.axes, the axes to plot on
+    sa_dict: dict, the dictionary containing spiral arm information
+
+    Returns
+    -------
+    None
+    '''
+    for each in sa_dict.keys():
+        v = sa_dict[each]
+        x, y, xi, yi, xo, yo = saHelper(v[0], v[1], v[2], v[3], v[4], v[5])
+        ax.plot(x, y, '-', color=v[6], lw=2, label=each)
+        ax.plot(xi, yi, '--', color=v[6], lw=0.5)
+        ax.plot(xo, yo, '--', color=v[6], lw=0.5)
+
+
+def plotSArm(ax, xunit='L_Z'):
     '''
     Plot spiral arms for 1-d plot. Data from Reid 2014
 
