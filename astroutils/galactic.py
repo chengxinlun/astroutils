@@ -1,6 +1,6 @@
 from .plot_crt import plotLine
-from astropy.coordinates import Distance, Galactocentric, ICRS, SkyCoord
-from astropy.units as u
+from astropy.coordinates import Distance, Galactocentric, SkyCoord
+import astropy.units as u
 import numpy as np
 
 
