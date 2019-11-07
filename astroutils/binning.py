@@ -38,19 +38,20 @@ def x_y_bin(x, y, statFunc, errFunc, maxBinSize=1000):
     return x_stt, y_stt, x_err, y_err
 
 
-def range_threshold(arr1, arr2, arr_min, arr_max):
+def range_threshold(arr1, arr2, arr_lim1, arr_lim2, opt=np.logical_and):
     '''
-    arr1[arr_min < arr2 < arr_max]
+    arr1[opt(arr2 > arr_lim1, arr2<arr_lim2)]
 
     Parameters
     ----------
     arr1: numpy.ndarray, the array the be thresholded
     arr2: numpy.ndarray, the array where selection is made
-    arr_min: minimum value to accept in arr2
-    arr_max: maximum value to accept in arr2
+    arr_lim1: arr2 > arr_lim1
+    arr_lim2: arr2 < arr_lim2
+    opt: function, default np.logical_and
 
     Returns
     -------
-    a thresholded numpy.ndarray
+    numpy.ndarray
     '''
-    return arr1[np.logical_and(arr2 < arr_max, arr2 > arr_min)]
+    return arr1[opt(arr2 < arr_lim2, arr2 > arr_lim1)]

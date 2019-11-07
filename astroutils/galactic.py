@@ -1,4 +1,6 @@
 from .plot_crt import plotLine
+from astropy.coordinates import Distance, Galactocentric, ICRS, SkyCoord
+from astropy.units as u
 import numpy as np
 
 
@@ -129,3 +131,57 @@ def drawGalacticBeaconXY(ax, sun=8.34, glon=4, gc=True, glon_r=2.0):
                         fontsize=20)
     if gc:
         ax.plot([0.0], [0.0], marker='X', markersize=12, color='k')
+
+
+def helio2galacto(ra, dec, parallax, pmra, pmdec, rv, dist=None, 
+                  gc=(266.4051, -28.936175), r_sun=8.30, z_sun=27.0,
+                  v_sun=(11.1, 232.24, 7.25)):
+    '''
+    Heliocentric coordinates to galactocentric coordinates. Please add units
+    before feeding them in the function.
+
+    Cartesian system: GC at (0, 0), Sun at (-r_sun, 0), right-handed
+    Cylindrical system: GC at (0, 0), Sun at (r_sun, +/-180), left-handed
+
+    Parameters
+    ----------
+    ra, dec: numpy.ndarray. RA and Dec in degrees
+    parallax: numpy.ndarray. Parallax in mas
+    pmra, pmdec: numpy.ndarray. Proper motion in mas/yr
+    rv: numpy.ndarray. Radial velocity in km/s
+    dist: numpy.ndarray, default None. Helio-distance with units in kpc
+    gc: 2-tuple of float, default (266.4051, -28.936175). RA and Dec of 
+        Galactic Center in ICRS with units in degrees
+    r_sun: float, default 8.30. Distance from Sun to GC in kpc
+    z_sun: float, default 27.0. Distance from Sun to Galactic plane in pc
+    v_sun: 3-tuple of loat, default (11.1, 232.24, 7.25). UVW of the velocity
+           of the Sun wrt GC in km/s
+
+    Returns
+    -------
+    X, Y, Z: numpy.ndarray. Galactocentric cartesian coordinates in kpc
+    V_X, V_Y, V_Z: numpy.ndarray. Galactocentric cartesian velocity in km/s
+    R, PHI: numpy.ndarray. Galactocentric cylindrical coordinates in (kpc, deg)
+    V_R, V_PHI: numpy.ndarray. Galactocentric cylindrical velocity in km/s
+    '''
+    if dist is not None:
+        d = dist
+    else:
+        d = Distance(parallax=parallax, allow_negative=True).to(u.kpc)
+    sc = SkyCoord(ra=ra, dec=dec, distance=d, pm_ra_cosdec=pmra,
+                  pm_dec=pmdec, radial_velocity=rv)
+    galc = sc.transform_to(Galactocentric)
+    # Save to file
+    X = galc.x
+    Y = galc.y
+    Z = galc.z
+    V_X = galc.v_x
+    V_Y = galc.v_y
+    V_Z = galc.v_z
+    # Transform to cylindrical
+    galc.representation_type = 'cylindrical'
+    R = galc.rho
+    PHI = galc.phi.to(u.deg)
+    V_R = galc.d_rho.to(u.km / u.s)
+    V_PHI = -galc.d_phi.to(u.rad / u.s) * galc.rho.to(u.km) / u.rad
+    return X, Y, Z, V_X, V_Y, V_Z, R, PHI, V_R, V_PHI
